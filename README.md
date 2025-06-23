@@ -40,7 +40,7 @@ In the next step we ran the benchmarks on both machines while disabling the turb
 
     ./gpl-<benchmark_name>-DISABLED_TURBO_CPU100
 
-Following this, we disabled some cores on the RISC-V machine as it contains 8 CPU cores, whereas the x86 machine only contains 2 real cores with 4 virtual threads. The results for these runs contain the following run_configuration:
+Following this, we disabled four cores on the RISC-V machine as it contains 8 CPU cores, whereas the x86 machine only contains two real cores with four virtual threads. The results for these runs contain the following run_configuration:
 
     ./gpl-<benchmark_name>_CORE-LIMITED-CPU-4
 
@@ -52,24 +52,33 @@ Another baseline power consumption was conducted while measurements for proc fs 
 
     ./baseline-measurement
 
-
 ## Result Directory Content
 
 In each of the result directories you will find the same structure:
 
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/                                               - top level directory with the benchmark timestamp
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/bm_params_sysinfo.txt                          - benchmark start parameters and system information 
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/<x86/RISC-V>                                   - results depending on the processor type
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/<x86/RISC-V>/procfsResults_<x86/risc>          - user and system ticks (basis for CPU time calculations) for the overall system (/proc/stat) and the benchmark process (/proc/<pid>/stat) 
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/<x86/RISC-V>/raplResults_x86                   - only on x86: power and energy measurements for the processor and DRAM package using Intel Running Average Power Limit (RAPL)
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/<x86/RISC-V>/renaissanceOutput_<x86/risc>.csv  - the benchmark results
-    ./gpl-<benchmark_name>_<run_configuration>/<benchmark_timestamp>/<x86/RISC-V>/timer_<x86/risc>.txt              - start and end timestamp of the overall run 
+
+```plaintext
+./gpl-<benchmark_name>_<run_configuration>/
+└── <benchmark_timestamp>/  # Top level directory with the benchmark timestamp.
+    ├── bm_params_sysinfo.txt  # Benchmark start parameters and system information
+    ├── x86/  # Results depending on the processor type.
+    │   ├── procfsResults_x86  # User and system ticks (basis for CPU time calculations) for the overall system (/proc/stat) and the benchmark process (/proc/<pid>/stat)
+    │   ├── raplResults_x86  # Only on x86: power and energy measurements for the processor and DRAM package using Intel Running Average Power Limit (RAPL).
+    │   ├── renaissanceOutput_x86.csv  # The benchmark results.
+    │   └── timer_x86.txt  # Start and end timestamp of the overall run
+    └── RISC-V/
+        ├── procfsResults_riscv  # User and system ticks (basis for CPU time calculations) for the overall system (/proc/stat) and the benchmark process (/proc/<pid>/stat)
+        ├── renaissanceOutput_riscv.csv  # The benchmark results.
+        └── timer_riscv.txt  # Start and end timestamp of the overall run
+```
 
 ## Python Scripts for Generating Figures About the Result Data
 
 This repository also contains three python scripts that have been used to process and visualize the results:
 
-    calculateCpuUtilizationPerBenchmark.py  -   This python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state and visualizes the CPU utilization as boxplots
-    visualizeDurationAsBoxplots.py  -   This python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state and visualizes the benchmark duration as boxplots
-    visualizePowerConsumptionAsBoxPlot.py - This python script processes the result data of the baseline-measurements and visualizes the power consumption as boxplot and the energy consumption as table.
+| Script Name | Description |
+|-------------|-------------|
+| `calculateCpuUtilizationPerBenchmark.py` | This Python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state, and visualizes the CPU utilization as boxplots. |
+| `visualizeDurationAsBoxplots.py` | This Python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state, and visualizes the benchmark duration as boxplots. |
+| `visualizePowerConsumptionAsBoxPlot.py` | This Python script processes the result data of the baseline measurements and visualizes the power consumption as a boxplot and the energy consumption as a table. |
 
