@@ -5,105 +5,102 @@ import seaborn as sns
 import os
 from typing import Dict, List
 
-workDir = "./"
-runLocationX86 = "_CPU100\\06-06-202512-59-33"
-#runLocationX86 = "-DISABLED_TURBO_CPU100\\06-06-202516-20-40"
-runLocationRISC = "_CPU100\\06-06-202512-59-33"
-#runLocationRISC = "_CORE-LIMITED-CPU-4\\03-06-202523-12-41"
+work_dir = "./"
+run_location_x86 = "_CPU100\\06-06-202512-59-33"
+# run_location_x86 = "-DISABLED_TURBO_CPU100\\06-06-202516-20-40"
+run_location_risc = "_CPU100\\06-06-202512-59-33"
+# run_location_risc = "_CORE-LIMITED-CPU-4\\03-06-202523-12-41"
 
 def calculate_cpu_usage(renaissance_file, procfs_file, benchmark_name, processor, benchmark_start_index=0):
     try:
-        # Lese Renaissance Output CSV
+        # Read Renaissance output CSV
         ren_df = pd.read_csv(renaissance_file)
 
-        # Filtere nach dem spezifischen Benchmark und Start-Index
+        # Filter for the specific benchmark and start index
         benchmark_data = ren_df[ren_df['benchmark'] == benchmark_name]
         if benchmark_data.empty:
-            raise ValueError(f"Benchmark '{benchmark_name}' nicht in den Daten gefunden!")
+            raise ValueError(f"Benchmark '{benchmark_name}' not found in data!")
 
-        # Stelle sicher, dass der Start-Index gültig ist
+        # Ensure the start index is valid
         if benchmark_start_index >= len(benchmark_data):
-            raise ValueError(f"Start-Index {benchmark_start_index} ist zu groß für Benchmark '{benchmark_name}'")
+            raise ValueError(f"Start index {benchmark_start_index} is too large for benchmark '{benchmark_name}'")
 
-        # Filtere ab dem gewünschten Start-Index
+        # Filter from the desired start index
         benchmark_data = benchmark_data.iloc[benchmark_start_index:]
 
-        # Berechne Start- und Endzeit
+        # Compute start and end time
         start_time = benchmark_data.iloc[0]['vm_start_unix_ms'] + benchmark_data.iloc[0]['uptime_ns'] / 1_000_000
         end_time = benchmark_data.iloc[-1]['vm_start_unix_ms'] + benchmark_data.iloc[-1]['uptime_ns'] / 1_000_000
 
-        # Lese procfs Ergebnisse
+        # Read procfs results
         proc_df = pd.read_csv(procfs_file)
 
-        # Filtere nach /proc/stat Einträgen und Zeitfenster
+        # Filter for /proc/stat entries and time window
         proc_df = proc_df[
-            (proc_df['SourceFile'].str.match(r'/proc/\d+/stat')) &  # Filtert Einträge wie /proc/11324/stat
+            (proc_df['SourceFile'].str.match(r'/proc/\d+/stat')) &
             (proc_df['Timestamp'] >= start_time) &
             (proc_df['Timestamp'] <= end_time)
             ]
 
-        # Berechne CPU-Nutzung
-        # Setze CPU-Kerne basierend auf Prozessor-Typ
+        # Calculate CPU usage
         cpu_cores = 8 if processor == 'RISC-V' else 4
-
         ticks_per_second = 100
 
-        # Berechne Differenzen zwischen aufeinanderfolgenden Messungen
+        # Compute differences between consecutive measurements
         proc_df['userTime_diff'] = proc_df['userTime (Ticks)'].diff()
         proc_df['systemTime_diff'] = proc_df['systemTime (Ticks)'].diff()
         proc_df['timestamp_diff'] = proc_df['Timestamp'].diff() / 1000
 
-        # Entferne erste Zeile (NaN durch diff)
+        # Drop first row (NaN from diff)
         proc_df = proc_df.dropna()
 
-        # Berechne CPU-Auslastung in Prozent
+        # Compute CPU utilization in percent
         total_cpu_usage = ((proc_df['userTime_diff'] + proc_df['systemTime_diff']) /
                            (proc_df['timestamp_diff'] * ticks_per_second * cpu_cores)) * 100
 
-        # Füge die CPU-Nutzungswerte dem DataFrame hinzu
+        # Add CPU usage values to the DataFrame
         proc_df['cpu_usage'] = total_cpu_usage
 
-        # Berechne relative Sekunden seit Start
+        # Calculate relative seconds since start
         proc_df['relative_seconds'] = np.floor((proc_df['Timestamp'] - proc_df['Timestamp'].iloc[0]) / 1000)
 
-        # Gruppiere die Werte pro Sekunde
+        # Group values per second
         cpu_per_second = proc_df.groupby('relative_seconds')['cpu_usage'].agg(list).reset_index()
 
         return {
             'benchmark': benchmark_name,
             'start_index': benchmark_start_index,
-            'durchschnittliche_cpu_auslastung': total_cpu_usage.mean(),
-            'maximale_cpu_auslastung': total_cpu_usage.max(),
-            'minimale_cpu_auslastung': total_cpu_usage.min(),
-            'start_zeit': start_time,
-            'end_zeit': end_time,
-            'anzahl_messungen': len(proc_df),
+            'average_cpu_usage': total_cpu_usage.mean(),
+            'max_cpu_usage': total_cpu_usage.max(),
+            'min_cpu_usage': total_cpu_usage.min(),
+            'start_time': start_time,
+            'end_time': end_time,
+            'num_measurements': len(proc_df),
             'cpu_values_per_second': [val for sublist in cpu_per_second['cpu_usage'].tolist() for val in sublist]
         }
     except Exception as e:
-        print(f"Fehler bei der Verarbeitung von Benchmark {benchmark_name}: {str(e)}")
+        print(f"Error while processing benchmark {benchmark_name}: {str(e)}")
         return None
 
-
-def plot_cpu_usage_boxplots_comparison(alle_ergebnisse: List[Dict]):
+def plot_cpu_usage_boxplots_comparison(all_results: List[Dict]):
     """
-    Erstellt Boxplots für jeden Benchmark im Stil des visualizeDurationAsBoxplots-Skripts.
+    Creates boxplots for each benchmark in the style of the visualizeDurationAsBoxplots script.
     """
-    # Gruppiere Ergebnisse nach Benchmark-Namen
+    # Group results by benchmark name
     benchmark_groups = {}
-    for ergebnis in alle_ergebnisse:
-        if ergebnis is not None:
-            benchmark_name = ergebnis['benchmark']
+    for result in all_results:
+        if result is not None:
+            benchmark_name = result['benchmark']
             if benchmark_name not in benchmark_groups:
                 benchmark_groups[benchmark_name] = []
-            benchmark_groups[benchmark_name].append(ergebnis)
+            benchmark_groups[benchmark_name].append(result)
 
-    # Schriftgrößen definieren
+    # Define font sizes
     TITLE_SIZE = 20
     LABEL_SIZE = 20
     TICK_SIZE = 16
 
-    # Globale Schriftgröße setzen
+    # Set global font size
     plt.rcParams.update({
         'font.size': TICK_SIZE,
         'axes.titlesize': TITLE_SIZE,
@@ -114,177 +111,160 @@ def plot_cpu_usage_boxplots_comparison(alle_ergebnisse: List[Dict]):
 
     num_benchmarks = len(benchmark_groups)
 
-    # Erstelle Figure mit Subplots
+    # Create figure with subplots
     fig, axes = plt.subplots(1, num_benchmarks, figsize=(20, 6), sharey=True)
     if num_benchmarks == 1:
         axes = [axes]
 
-    # Graustufen-Palette definieren
+    # Define grayscale palette
     palette = sns.color_palette("Greys", n_colors=2)
 
-    # Erstelle für jeden Benchmark einen separaten Plot
-    for idx, (benchmark_name, ergebnisse) in enumerate(benchmark_groups.items()):
-        # Erstelle DataFrame für den aktuellen Benchmark
+    # Create a separate plot for each benchmark
+    for idx, (benchmark_name, results) in enumerate(benchmark_groups.items()):
         plot_data = []
         processors = []
-        for ergebnis in ergebnisse:
-            plot_data.extend(ergebnis['cpu_values_per_second'])
-            processors.extend([ergebnis['processor']] * len(ergebnis['cpu_values_per_second']))
+        for result in results:
+            plot_data.extend(result['cpu_values_per_second'])
+            processors.extend([result['processor']] * len(result['cpu_values_per_second']))
 
         df = pd.DataFrame({
             'CPU Utilization (%)': plot_data,
             'Processor': processors
         })
 
-        # Erstelle Boxplot
+        # Create boxplot
         sns.boxplot(x='Processor', y='CPU Utilization (%)', data=df,
                     palette=palette, ax=axes[idx])
 
-        # Formatiere Subplot
+        # Format subplot
         axes[idx].set_title(benchmark_name, fontsize=TITLE_SIZE, pad=15)
         axes[idx].set_xlabel('')
-        if idx == 0:  # Nur beim ersten Plot y-Label anzeigen
+        if idx == 0:
             axes[idx].set_ylabel('CPU Utilization (%)', fontsize=LABEL_SIZE)
         else:
             axes[idx].set_ylabel('')
 
-        # Rotiere x-Achsen-Labels und passe Schriftgröße an
         axes[idx].tick_params(axis='x', rotation=45, labelsize=TICK_SIZE)
         axes[idx].tick_params(axis='y', labelsize=TICK_SIZE)
 
-        # Füge Gitterlinien hinzu
         axes[idx].yaxis.grid(True)
-
-        # Setze y-Achsen-Grenzen
         axes[idx].set_ylim(0, 100)
 
-    # Layout optimieren
     plt.tight_layout(pad=2.0)
 
-    # Boxplot als PDF speichern
-
-    # Boxplot als PDF speichern
-    pdf_path = '../X86' + runLocationX86.replace(slash, "_").replace("/", "_") + '_RISC'+ runLocationRISC.replace(slash, "_").replace("/", "_") + '_cpuUtilizationBoxplot.pdf'
-    #pdf_path = '../frequencyAndCoreMatchedCpuUtilizationBoxplot.pdf'
+    # Save boxplot as PDF
+    pdf_path = 'X86' + run_location_x86.replace(slash, "_").replace("/", "_") + '_RISC' + run_location_risc.replace(slash, "_").replace("/", "_") + '_cpuUtilizationBoxplot.pdf'
+    #pdf_path = 'frequencyAndCoreMatchedCpuUtilizationBoxplot.pdf'
     plt.savefig(pdf_path, format='pdf', bbox_inches='tight', dpi=300)
-
-    #pdf_path = 'cpu_usage_boxplots.pdf'
-    #   plt.savefig(pdf_path, format='pdf', bbox_inches='tight', dpi=300)
-
     plt.show()
 
-    print(f"Boxplot wurde erfolgreich als PDF gespeichert: {pdf_path}")
+    print(f"Boxplot was successfully saved as PDF: {pdf_path}")
 
-def verarbeite_benchmarks(verzeichnis_configs, benchmark_configs):
+def process_benchmarks(directory_configs, benchmark_configs):
     """
-    Verarbeitet mehrere Benchmarks aus verschiedenen Verzeichnissen mit Prozessor-Information.
-    
-    :param verzeichnis_configs: Liste der Verzeichnis-Konfigurationen mit Prozessor-Information
-    :param benchmark_configs: Liste von Dictionaries mit Benchmark-Konfigurationen
+    Processes multiple benchmarks from different directories with processor information.
+
+    :param directory_configs: List of directory configurations with processor info
+    :param benchmark_configs: List of dictionaries with benchmark configurations
     """
-    alle_ergebnisse = []
-    
-    for verzeichnis_config in verzeichnis_configs:
-        verzeichnis = verzeichnis_config['path']
-        processor = verzeichnis_config['processor']
-        
-        # Generiere Dateinamen basierend auf Prozessor-Typ
+    all_results = []
+
+    for directory_config in directory_configs:
+        directory = directory_config['path']
+        processor = directory_config['processor']
+
         processor_suffix = 'risc' if processor == 'RISC-V' else 'x86'
-        renaissance_file = os.path.join(verzeichnis, f'renaissanceOutput_{processor_suffix}.csv')
-        procfs_file = os.path.join(verzeichnis, f'procfsResults_{processor_suffix}')
-        
+        renaissance_file = os.path.join(directory, f'renaissanceOutput_{processor_suffix}.csv')
+        procfs_file = os.path.join(directory, f'procfsResults_{processor_suffix}')
+
         if not (os.path.exists(renaissance_file) and os.path.exists(procfs_file)):
-            print(f"Überspringe nicht existierendes Verzeichnis: {verzeichnis}")
+            print(f"Skipping non-existent directory: {directory}")
             continue
-            
+
         for config in benchmark_configs:
-            ergebnis = calculate_cpu_usage(
+            result = calculate_cpu_usage(
                 renaissance_file,
                 procfs_file,
                 benchmark_name=config['name'],
                 processor=processor,
                 benchmark_start_index=config.get('start_index', 0)
             )
-            if ergebnis:
-                ergebnis['processor'] = processor  # Füge Prozessor-Information hinzu
-                alle_ergebnisse.append(ergebnis)
-    
-    return alle_ergebnisse
+            if result:
+                result['processor'] = processor
+                all_results.append(result)
 
-# Beispielaufruf
+    return all_results
+
+# Example run
 if __name__ == "__main__":
     slash = '\\' if os.name == 'nt' else '/'
-    # Definition der Verzeichnis-Konfigurationen mit Prozessor-Information
-    verzeichnis_configs = [
+    directory_configs = [
         {
-            'path': workDir + 'gpl-akka-uct' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-akka-uct' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-akka-uct' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-akka-uct' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': workDir + 'gpl-fj-kmeans' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-fj-kmeans' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-fj-kmeans' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-fj-kmeans' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
-
         {
-            'path': workDir + 'gpl-reactors' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-reactors' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-reactors' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-reactors' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': workDir + 'gpl-future-genetic' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-future-genetic' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-future-genetic' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-future-genetic' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': workDir + 'gpl-mnemonics' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-mnemonics' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-mnemonics' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-mnemonics' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': workDir + 'gpl-par-mnemonics' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-par-mnemonics' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-par-mnemonics' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-par-mnemonics' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': workDir + 'gpl-rx-scrabble' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-rx-scrabble' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-rx-scrabble' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-rx-scrabble' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': workDir + 'gpl-scrabble' + runLocationRISC + slash +'RISC',
+            'path': work_dir + 'gpl-scrabble' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
-            'path': workDir + 'gpl-scrabble' + runLocationX86 + slash +'X86',
+            'path': work_dir + 'gpl-scrabble' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
-        # Weitere Verzeichnisse hier hinzufügen
     ]
 
-    # Definition der Benchmark-Konfigurationen
     benchmark_configs = [
         {'name': 'akka-uct', 'start_index': 24},
         {'name': 'fj-kmeans', 'start_index': 30},
@@ -294,24 +274,19 @@ if __name__ == "__main__":
         {'name': 'par-mnemonics', 'start_index': 16},
         {'name': 'rx-scrabble', 'start_index': 80},
         {'name': 'scrabble', 'start_index': 50},
-       # {'name': 'als', 'start_index': 0},
-        # Weitere Benchmark-Konfigurationen hier hinzufügen
     ]
 
     try:
-        # Verarbeite alle Benchmarks
-        alle_ergebnisse = verarbeite_benchmarks(verzeichnis_configs, benchmark_configs)
-        
-        # Zeige die Ergebnisse
-        for ergebnis in alle_ergebnisse:
-            print(f"\nCPU-Auslastungsstatistiken für {ergebnis['benchmark']} ({ergebnis['processor']}):")
-            print(f"Durchschnittliche CPU-Auslastung: {ergebnis['durchschnittliche_cpu_auslastung']:.2f}%")
-            print(f"Maximale CPU-Auslastung: {ergebnis['maximale_cpu_auslastung']:.2f}%")
-            print(f"Minimale CPU-Auslastung: {ergebnis['minimale_cpu_auslastung']:.2f}%")
-            print(f"Anzahl der Messungen: {ergebnis['anzahl_messungen']}")
-        
-        # Erstelle die Boxplots
-        plot_cpu_usage_boxplots_comparison(alle_ergebnisse)
+        all_results = process_benchmarks(directory_configs, benchmark_configs)
+
+        for result in all_results:
+            print(f"\nCPU usage statistics for {result['benchmark']} ({result['processor']}):")
+            print(f"Average CPU usage: {result['average_cpu_usage']:.2f}%")
+            print(f"Max CPU usage: {result['max_cpu_usage']:.2f}%")
+            print(f"Min CPU usage: {result['min_cpu_usage']:.2f}%")
+            print(f"Number of measurements: {result['num_measurements']}")
+
+        plot_cpu_usage_boxplots_comparison(all_results)
 
     except Exception as e:
-        print(f"Fehler: {e}")
+        print(f"Error: {e}")

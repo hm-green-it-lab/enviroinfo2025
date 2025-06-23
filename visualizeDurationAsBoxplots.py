@@ -3,49 +3,49 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-workDir = "./"
-runLocationX86 = "_CPU100\\06-06-202512-59-33"
-#runLocationX86 = "-DISABLED_TURBO_CPU100\\06-06-202516-20-40"
-runLocationRISC = "_CPU100\\06-06-202512-59-33"
-#runLocationRISC = "_CORE-LIMITED-CPU-4\\03-06-202523-12-41"
+work_dir = "./"
+run_location_x86 = "_CPU100\\06-06-202512-59-33"
+# run_location_x86 = "-DISABLED_TURBO_CPU100\\06-06-202516-20-40"
+run_location_risc = "_CPU100\\06-06-202512-59-33"
+# run_location_risc = "_CORE-LIMITED-CPU-4\\03-06-202523-12-41"
 
 slash = '\\' if os.name == 'nt' else '/'
 
-# Beispiel-Daten für die CSV-Dateien und ihre Dimensionen
+# Example data for CSV files and their dimensions
 csv_files = [
-    {'file': workDir + 'gpl-akka-uct' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'akka-uct'},
-    {'file': workDir + 'gpl-akka-uct' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'akka-uct'},
+    {'file': work_dir + 'gpl-akka-uct' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'akka-uct'},
+    {'file': work_dir + 'gpl-akka-uct' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'akka-uct'},
 
-    {'file': workDir + 'gpl-fj-kmeans' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'fj-kmeans'},
-    {'file': workDir + 'gpl-fj-kmeans' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'fj-kmeans'},
+    {'file': work_dir + 'gpl-fj-kmeans' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'fj-kmeans'},
+    {'file': work_dir + 'gpl-fj-kmeans' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'fj-kmeans'},
 
-    {'file': workDir + 'gpl-reactors' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'reactors'},
-    {'file': workDir + 'gpl-reactors' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'reactors'},
+    {'file': work_dir + 'gpl-reactors' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'reactors'},
+    {'file': work_dir + 'gpl-reactors' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'reactors'},
 
-    {'file': workDir + 'gpl-future-genetic' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'future-genetic'},
-    {'file': workDir + 'gpl-future-genetic' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'future-genetic'},
+    {'file': work_dir + 'gpl-future-genetic' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'future-genetic'},
+    {'file': work_dir + 'gpl-future-genetic' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'future-genetic'},
 
-    {'file': workDir + 'gpl-mnemonics' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'mnemonics'},
-    {'file': workDir + 'gpl-mnemonics' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'mnemonics'},
+    {'file': work_dir + 'gpl-mnemonics' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'mnemonics'},
+    {'file': work_dir + 'gpl-mnemonics' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'mnemonics'},
 
-    {'file': workDir + 'gpl-par-mnemonics' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'par-mnemonics'},
-    {'file': workDir + 'gpl-par-mnemonics' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'par-mnemonics'},
+    {'file': work_dir + 'gpl-par-mnemonics' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'par-mnemonics'},
+    {'file': work_dir + 'gpl-par-mnemonics' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'par-mnemonics'},
 
-    {'file': workDir + 'gpl-rx-scrabble' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'rx-scrabble'},
-    {'file': workDir + 'gpl-rx-scrabble' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'rx-scrabble'},
+    {'file': work_dir + 'gpl-rx-scrabble' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'rx-scrabble'},
+    {'file': work_dir + 'gpl-rx-scrabble' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'rx-scrabble'},
 
-    {'file': workDir + 'gpl-scrabble' + runLocationX86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'scrabble'},
-    {'file': workDir + 'gpl-scrabble' + runLocationRISC + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'scrabble'},
+    {'file': work_dir + 'gpl-scrabble' + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv', 'processor': 'x86', 'run': 'scrabble'},
+    {'file': work_dir + 'gpl-scrabble' + run_location_risc + f'{slash}RISC{slash}renaissanceOutput_risc.csv', 'processor': 'RISC-V', 'run': 'scrabble'},
 ]
 
-# Liste zum Sammeln der Daten
+# List to collect data
 data_list = []
 
-# Dictionary für die zu ignorierenden Zeilen je Run
+# Dictionary for rows to skip per run
 skip_rows = {
-    'akka-uct': 24,      # Beispiel: Ignoriere erste 5 Zeilen
-    'fj-kmeans': 30,    # Beispiel: Ignoriere erste 10 Zeilen
-    'reactors': 10,      # usw.
+    'akka-uct': 24,
+    'fj-kmeans': 30,
+    'reactors': 10,
     'future-genetic': 50,
     'mnemonics': 16,
     'par-mnemonics': 16,
@@ -53,56 +53,47 @@ skip_rows = {
     'scrabble': 50
 }
 
-
-# CSV-Dateien einlesen und Daten vorbereiten
+# Read CSV files and prepare data
 for file_info in csv_files:
-    # Bestimme die Anzahl der zu überspringenden Zeilen basierend auf dem Run
-    rows_to_skip = skip_rows.get(file_info['run'], 0)  # 0 als Standardwert, falls Run nicht im Dictionary
+    # Determine number of rows to skip based on run
+    rows_to_skip = skip_rows.get(file_info['run'], 0)
 
-    # Lies CSV-Datei ein, überspringe die definierten Zeilen
+    # Read CSV, skipping the defined rows
     df = pd.read_csv(file_info['file'],
                      index_col=None,
                      header=0,
-                     skiprows=range(1, rows_to_skip + 1))  # +1 weil range exclusive ist
-    # 1 als Start, um Header zu behalten
+                     skiprows=range(1, rows_to_skip + 1))  # +1 because range is exclusive
 
-    # Minimalen Timestamp finden
+    # Find minimum timestamp
     min_timestamp = df['uptime_ns'].min()
 
-    # Timestamps relativ zum minimalen Timestamp berechnen
+    # Make timestamps relative to the minimum timestamp
     df['uptime_ns'] = df['uptime_ns'] - min_timestamp
 
     df['duration_s'] = df['duration_ns'] / 1_000_000_000
-    # Daten für die erste Minute herausschneiden
-    #df = df[df['Relative Timestamp'] >= 60000]
 
-    # Daten für die nächsten 10 Minuten berücksichtigen
-    #df = df[df['Relative Timestamp'] <= 660000]
-
-    # Dimensionen hinzufügen
+    # Add processor and benchmark run info
     df['processor'] = file_info['processor']
     df['run'] = file_info['run']
 
-    # Daten zur Liste hinzufügen
+    # Append to data list
     data_list.append(df)
 
-# DataFrame zusammenführen
+# Combine all data into one DataFrame
 df = pd.concat(data_list, axis=0, ignore_index=True)
 
-# Daten nach Timestamp gruppieren und die Power-Werte addieren
+# Group data by timestamp, processor, and run
 agg_df = df.groupby(['duration_s', 'processor', 'run']).all().reset_index()
 
-# Reihenfolge der benchmark-Dimensionen definieren
+# Define benchmark run order
 benchmark_order = ['akka-uct', 'fj-kmeans', 'reactors', 'future-genetic', 'mnemonics', 'par-mnemonics', 'rx-scrabble', 'scrabble']
 
-# ... (vorheriger Code bis zur Datenverarbeitung bleibt gleich) ...
-
-# Schriftgrößen definieren
+# Define font sizes
 TITLE_SIZE = 20
 LABEL_SIZE = 20
 TICK_SIZE = 16
 
-# Globale Schriftgröße für matplotlib setzen
+# Set global font sizes for matplotlib
 plt.rcParams.update({
     'font.size': TICK_SIZE,
     'axes.titlesize': TITLE_SIZE,
@@ -111,49 +102,49 @@ plt.rcParams.update({
     'ytick.labelsize': TICK_SIZE
 })
 
-# Anzahl der Benchmarks
+# Number of benchmarks
 n_benchmarks = len(benchmark_order)
 
-# Erstelle Figure mit Subplots
+# Create figure with subplots
 fig, axes = plt.subplots(1, n_benchmarks, figsize=(20, 6), sharey=False)
 
-# Graustufen-Palette definieren
+# Define grayscale palette
 palette = sns.color_palette("Greys", n_colors=2)
 
-# Erstelle für jeden Benchmark einen separaten Plot
+# Create individual plots for each benchmark
 for idx, benchmark in enumerate(benchmark_order):
-    # Filtere Daten für aktuellen Benchmark
+    # Filter data for current benchmark
     benchmark_data = df[df['run'] == benchmark]
-    
-    # Erstelle Boxplot
-    sns.boxplot(x='processor', y='duration_s', data=benchmark_data, 
+
+    # Create boxplot
+    sns.boxplot(x='processor', y='duration_s', data=benchmark_data,
                 palette=palette, ax=axes[idx])
     axes[idx].set_ylim(bottom=0)
 
-    # Formatiere Subplot
-    axes[idx].set_title(benchmark, fontsize=TITLE_SIZE, pad=15)  # Mehr Abstand zum Plot
+    # Format subplot
+    axes[idx].set_title(benchmark, fontsize=TITLE_SIZE, pad=15)
     axes[idx].set_xlabel('')
-    if idx == 0:  # Nur beim ersten Plot y-Label anzeigen
+    if idx == 0:
         axes[idx].set_ylabel('Duration (s)', fontsize=LABEL_SIZE)
     else:
         axes[idx].set_ylabel('')
-    
-    # Rotiere x-Achsen-Labels und passe Schriftgröße an
+
+    # Rotate x-axis labels and set tick size
     axes[idx].tick_params(axis='x', rotation=45, labelsize=TICK_SIZE)
     axes[idx].tick_params(axis='y', labelsize=TICK_SIZE)
-    
-    # Füge Gitterlinien hinzu
+
+    # Add grid lines
     axes[idx].yaxis.grid(True)
 
-# Layout optimieren mit mehr Platz für die größeren Beschriftungen
+# Optimize layout with padding
 plt.tight_layout(pad=2.0)
 
-# Boxplot als PDF speichern
-pdf_path = 'X86' + runLocationX86.replace(slash, "_").replace("/", "_") + '_RISC'+ runLocationRISC.replace(slash, "_").replace("/", "_") + '_durationBoxplot.pdf'
-#pdf_path = 'frequencyAndCoreMatchedDurationBoxplot.pdf'
+# Save boxplot as PDF
+pdf_path = 'X86' + run_location_x86.replace(slash, "_").replace("/", "_") + '_RISC' + run_location_risc.replace(slash, "_").replace("/", "_") + '_durationBoxplot.pdf'
+# pdf_path = 'frequencyAndCoreMatchedDurationBoxplot.pdf'
 plt.savefig(pdf_path, format='pdf', bbox_inches='tight', dpi=300)
 
-# Boxplot anzeigen
+# Show boxplot
 plt.show()
 
-print(f"Boxplot wurde erfolgreich als PDF gespeichert: {pdf_path}")
+print(f"Boxplot was successfully saved as PDF: {pdf_path}")
