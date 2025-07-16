@@ -1,4 +1,4 @@
-SourceFile,Timestamp,userTime (Ticks), systemTime (Ticks)
+SourceFile,Timestamp,userTime (Ticks),systemTime (Ticks)
 /proc/stat,1749307016269,2009751,208094
 /proc/34301/stat,1749307016271,345,24
 /proc/stat,1749307017032,2010027,208108

@@ -7,9 +7,9 @@ from typing import Dict, List
 
 work_dir = "./"
 run_location_x86 = "_CPU100\\06-06-202512-59-33"
-# run_location_x86 = "-DISABLED_TURBO_CPU100\\06-06-202516-20-40"
+#run_location_x86 = "-DISABLED_TURBO_CPU100\\06-06-202516-20-40"
 run_location_risc = "_CPU100\\06-06-202512-59-33"
-# run_location_risc = "_CORE-LIMITED-CPU-4\\03-06-202523-12-41"
+#run_location_risc = "_CORE-LIMITED-CPU-4\\03-06-202523-12-41"
 
 def calculate_cpu_usage(renaissance_file, procfs_file, benchmark_name, processor, benchmark_start_index=0):
     try:
@@ -200,15 +200,11 @@ if __name__ == "__main__":
     slash = '\\' if os.name == 'nt' else '/'
     directory_configs = [
         {
-            'path': work_dir + 'gpl-akka-uct' + run_location_risc + slash + 'RISC',
-            'processor': 'RISC-V'
-        },
-        {
             'path': work_dir + 'gpl-akka-uct' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-fj-kmeans' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-akka-uct' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
@@ -216,7 +212,7 @@ if __name__ == "__main__":
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-reactors' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-fj-kmeans' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
@@ -224,7 +220,7 @@ if __name__ == "__main__":
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-future-genetic' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-reactors' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
@@ -232,7 +228,7 @@ if __name__ == "__main__":
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-mnemonics' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-future-genetic' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
@@ -240,7 +236,7 @@ if __name__ == "__main__":
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-par-mnemonics' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-mnemonics' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
@@ -248,7 +244,7 @@ if __name__ == "__main__":
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-rx-scrabble' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-par-mnemonics' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
@@ -256,12 +252,16 @@ if __name__ == "__main__":
             'processor': 'x86'
         },
         {
-            'path': work_dir + 'gpl-scrabble' + run_location_risc + slash + 'RISC',
+            'path': work_dir + 'gpl-rx-scrabble' + run_location_risc + slash + 'RISC',
             'processor': 'RISC-V'
         },
         {
             'path': work_dir + 'gpl-scrabble' + run_location_x86 + slash + 'X86',
             'processor': 'x86'
+        },
+        {
+            'path': work_dir + 'gpl-scrabble' + run_location_risc + slash + 'RISC',
+            'processor': 'RISC-V'
         },
     ]
 
