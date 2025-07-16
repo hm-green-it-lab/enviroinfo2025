@@ -71,7 +71,7 @@ for source in data_sources:
         print(f"Warning: Found {len(power_data)} values (expected: 480). " + source['power_file'])
 
     power_data['processor'] = source['processor']
-    power_data['benchmark'] = source['benchmark'] + '\n(Energy Meter)'
+    power_data['benchmark'] = source['benchmark'] + '\n(EM)'
     combined_power_data.append(power_data[['power', 'processor', 'benchmark']])
 
     # If rapl_file is present, read and process it
@@ -162,7 +162,7 @@ riscv_sums = [df['power'].sum() for df in riscv_data]
 # Add tables below boxplots
 # X86 table
 cell_text_x86 = [[f"{val:.2f} Joule"] for val in x86_sums]
-row_labels_x86 = [df['benchmark'].iloc[0].replace('\n(RAPL)', ' (RAPL)').replace('\n(Energy Meter)', ' (Energy Meter)') for df in x86_data]
+row_labels_x86 = [df['benchmark'].iloc[0].replace('\n(RAPL)', ' (RAPL)').replace('\n(EM)', ' (EM)') for df in x86_data]
 table_x86 = axes[0].table(
     cellText=cell_text_x86,
     rowLabels=row_labels_x86,
@@ -170,7 +170,7 @@ table_x86 = axes[0].table(
     cellLoc='center',
     rowLoc='center',
     loc='bottom',
-    bbox=[0.55, -0.7, 0.5, 0.5]
+    bbox=[0.45, -0.7, 0.5, 0.5]
 )
 table_x86.auto_set_font_size(False)
 table_x86.set_fontsize(16)
