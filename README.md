@@ -2,7 +2,7 @@
 
 This repository contains the raw data collected during the experiments presented in the paper _"Evaluating Performance and Energy Efficiency of RISC-V and x86 Processors for Java Workloads"_. Furthermore, it contains the Python scripts to create the Figures about the result data included in the paper.
 
-The experiments utilize the Renaissance benchmark suite, which includes a variety of workloads designed to evaluate different aspects of Java performance. To focus specifically on CPU performance and energy efficiency, we selected the **concurrency** and **functional** benchmark groups. Other groups were excluded as they involve workloads that stress additional system resources such as disk or network I/O.
+The experiments utilize the Renaissance benchmark suite (https://renaissance.dev/), which includes a variety of workloads designed to evaluate different aspects of Java performance. To focus specifically on CPU performance and energy efficiency, we selected the **concurrency** and **functional** benchmark groups. Other groups were excluded as they involve workloads that stress additional system resources such as disk or network I/O.
 
 Descriptions of the benchmarks used in each group are provided in the tables below.
 
@@ -81,6 +81,17 @@ This repository also contains three python scripts that have been used to proces
 | `calculateCpuUtilizationPerBenchmark.py` | This Python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state, and visualizes the CPU utilization as boxplots. |
 | `visualizeDurationAsBoxplots.py` | This Python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state, and visualizes the benchmark duration as boxplots. |
 | `visualizePowerConsumptionAsBoxPlot.py` | This Python script processes the result data of the baseline measurements and visualizes the power consumption as a boxplot and the energy consumption as a table. |
+
+## Measurement Tools 
+
+In addition to the python tools listed above, we have used the following Java-based tools for the experiments in this paper, which are also available online:
+
+| Tool                                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| https://github.com/hm-green-it-lab/powercap-reader | This Java-based powercap-reader continuously reads RAPL data via powercap on Linux. This tool has been used to collect the raplResults-CSV-files for x86. Please note that it has been updated in the meantime so that only the energy values are stored and the power values are calculated afterwards. In the version of the tool used for this paper, the power values were still directly calculated every second and written in the CSV files. |
+|https://github.com/hm-green-it-lab/procfs-reader| This Java-based procfs-reader continuously reads resource demand data for processes from the proc file system on Linux. In this paper it has been used to create the procfsResults-CSV-files containing the CPU demand data of the benchmarking processes and the overall system.                                                                                                                                                                |
+https://github.com/hm-green-it-lab/shelly-power-reader| This Java-based shelly-power-reade continuously reads power and energy values for shelly devices. It has been used to create the shellyReaderResults-CSV-files.                                                                                                                                                  |
+
 
 ## Threads to Validity
 
