@@ -92,6 +92,13 @@ In addition to the python tools listed above, we have used the following Java-ba
 |https://github.com/hm-green-it-lab/procfs-reader| This Java-based procfs-reader continuously reads resource demand data for processes from the proc file system on Linux. In this paper it has been used to create the procfsResults-CSV-files containing the CPU demand data of the benchmarking processes and the overall system.                                                                                                                                                                |
 https://github.com/hm-green-it-lab/shelly-power-reader| This Java-based shelly-power-reade continuously reads power and energy values for shelly devices. It has been used to create the shellyReaderResults-CSV-files.                                                                                                                                                  |
 
+## Experiment Automation
+
+In the folder `experiment_automation` you will find a script called `experiment_automation\benchmarkscript.py` that has been used to automate the benchmark execution.
+
+To start the script `Python` and the dependencies in `requirements.txt` are required. The Nix flake can be used to get a Shell with the required dependencies. To use a nix flake, nix package manager, or Nixos is required (https://nixos.org/download/). Then simply run `nix develop` in the `experiment_automation` directory to get a shell with all required dependencies.
+The `experiment_automation\benchmarkscript.py` script expects the shellyReader to be at `../tools/shelly-power-reader/target/`. And for the remote machines to have rapl/procfs/renaissance runners in their respective directories.
+Also a file `benchmark.env` is required, for necessary variables and their names, check the script.
 
 ## Threads to Validity
 
