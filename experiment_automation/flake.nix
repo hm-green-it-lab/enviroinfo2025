@@ -5,7 +5,7 @@
 
   outputs = { nixpkgs, ... }:
     let
-      system = "aarch64-darwin";
+      system = "x86_64-linux"; # needs to be adjusted for M processors to "aarch64-darwin"
       pkgs = import nixpkgs { inherit system; };
       python = pkgs.python312; # python version
     in {
@@ -24,7 +24,7 @@
           python -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
-        '';
+          '';
       };
     };
 }
