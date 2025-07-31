@@ -1,2 +1,6 @@
 /.idea
 /*.pdf
+/experiment_automation/flake.lock
+/experiment_automation/.venv/
+/experiment_automation/.venv/
+/experiment_automation/JmhFutureGenetic_singleShot_CPU100/
