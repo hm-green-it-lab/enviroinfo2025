@@ -17,21 +17,23 @@ load_dotenv("benchmark.env")
 # Configuration
 BENCHMARKS = [  # Running these sequentially
     # Functional
-    "JmhFutureGenetic",
-    "JmhMnemonics",
-    "JmhParMnemonic",
-    "JmhRxScrabble",
-    "JmhScrabble",
+    ("future-genetic", 50 + 13),
+    ("mnemonics", 16 + 10),
+    ("par-mnemonics", 16 + 10),
+    ("rx-scrabble", 80 + 21),
+    ("scrabble", 50 + 13),
     # Concurrency
-    "JmhReactors",  # Timed out on risc.
-    "JmhAkkaUct",  # these two should be in concurrency, but ran already. This had nullpointers.
-    "JmhFjKmeans",
+    ("akka-uct", 24 + 10),
+    ("fj-kmeans", 30 + 10),
+    ("reactors", 10 + 10),
 ]
-CPU_UTILIZATION = [100, 75, 50, 25]  # Array of CPU percentages to run
-JVM_ARGS = "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Djmh.blackhole.mode=COMPILER"
-BM_MODE = "Throughput"
-TIME_UNIT = "s"
-STATIC_BM_PARAMS = f"-bm {BM_MODE} -tu {TIME_UNIT} -f 1 -t 1"
+JVM_ARGS = "--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
+X86_DISABLE_TURBO = False
+X86_DISABLE_TURBO_STRING = "echo \"1\" > /sys/devices/system/cpu/intel_pstate/no_turbo"
+X86_ENABLE_TURBO_STRING = "echo \"0\" > /sys/devices/system/cpu/intel_pstate/no_turbo"
+
+STATIC_BM_PARAMS = ""  # for gpl not needed
+
 MACHINE = Enum(
     "MACHINE",
     [
@@ -50,7 +52,7 @@ APPS = Enum(
 )
 JARS = {
     APPS.SHELLY: "shelly-power-reader-1.0-runner.jar",
-    APPS.RENAISSANCE: "renaissance-jmh-0.16.0.jar",
+    APPS.RENAISSANCE: "renaissance-gpl-0.16.0.jar",
     APPS.PROCFS: "procfs-reader-1.0-runner.jar",
     APPS.RAPL: "powercap-reader-1.0-runner.jar",
 }
@@ -62,6 +64,8 @@ OUTPUT_FILE_NAMES = {
 }
 POSTFIX = {MACHINE.X86: "_x86", MACHINE.RISC: "_risc"}
 SHELLY_VERSION = {MACHINE.X86: "1", MACHINE.RISC: "2+"}
+
+USE_JBOSS_ARG = "-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 RISC_IP = os.environ.get("RISC_IP")
 X86_IP = os.environ.get("X86_IP")
@@ -121,7 +125,6 @@ class BenchmarkWorker(threading.Thread):
             bm_params,
             results_folder,
             remote_basefolder_name,
-            cpuQuota,
     ):
         super().__init__()
         self.machine = machine
@@ -140,7 +143,6 @@ class BenchmarkWorker(threading.Thread):
         self.shelly_process = None
         self.ssh_client = None
         self.exception = None
-        self.cpuQuota = cpuQuota
 
     def run(self):
         postfix = POSTFIX[self.machine]
@@ -155,7 +157,7 @@ class BenchmarkWorker(threading.Thread):
             shelly_cmd = [
                 "java",
                 f"-Dquarkus.http.port={self.shelly_port}",
-                "-Djava.util.logging.manager=org.jboss.logmanager.LogManager",
+                USE_JBOSS_ARG,
                 # necessary to prevent error output due to java using a different logger
                 "-jar",
                 f"{parent_directory}/tools/shelly-power-reader/target/{JARS[APPS.SHELLY]}",
@@ -191,17 +193,20 @@ class BenchmarkWorker(threading.Thread):
             cmd_parts = [
                 f"mkdir -p {self.remote_dir} && cd {self.remote_dir}",
                 # start procfs monitor
-                f"nohup java -jar {self.remote_base_folder}/{JARS[APPS.PROCFS]} > {OUTPUT_FILE_NAMES[APPS.PROCFS]}{postfix} 2>&1 </dev/null &",
+                f"nohup java {USE_JBOSS_ARG} -jar {self.remote_base_folder}/{JARS[APPS.PROCFS]} > {OUTPUT_FILE_NAMES[APPS.PROCFS]}{postfix} 2>&1 </dev/null &",
             ]
             # on x86 also start RAPL monitor
             if self.machine == MACHINE.X86:
+                if X86_DISABLE_TURBO:
+                    cmd_parts.append(X86_DISABLE_TURBO_STRING, )
+
                 cmd_parts.append(
                     f"nohup java -jar {self.remote_base_folder}/{JARS[APPS.RAPL]} > {self.remote_dir}/{OUTPUT_FILE_NAMES[APPS.RAPL]}{postfix} 2>&1 </dev/null &",
                 )
             # run the JMH benchmark
-            outputArgs = f"-o {self.remote_dir}/{OUTPUT_FILE_NAMES[APPS.RENAISSANCE]}Output{postfix} -rff {self.remote_dir}/{OUTPUT_FILE_NAMES[APPS.RENAISSANCE]}Results{postfix}"
+            outputArgs = f"--csv {self.remote_dir}/{OUTPUT_FILE_NAMES[APPS.RENAISSANCE]}Output{postfix}.csv"
             cmd_parts.append(
-                f"systemd-run --scope --user -p CPUQuota={self.cpuQuota}% java {self.jvm_args} -jar /home/{self.user}/renaissance/{JARS[APPS.RENAISSANCE]} {outputArgs} {self.bm_params}"
+                f"java {self.jvm_args} -jar /home/{self.user}/renaissance/{JARS[APPS.RENAISSANCE]} {outputArgs} {self.bm_params}"
             )
             # build full remote command string, collapsing any '&;' sequences to '&' to avoid bash syntax errors
             cmd_str = "; ".join(cmd_parts)
@@ -260,6 +265,15 @@ class BenchmarkWorker(threading.Thread):
             jars_to_kill = [JARS[APPS.RENAISSANCE], JARS[APPS.PROCFS]]
             if self.machine == MACHINE.X86:
                 jars_to_kill.append(JARS[APPS.RAPL])
+                if X86_DISABLE_TURBO:
+                    try:
+                        logging.info(f"[{self.machine}] re-enabling turbo mode")
+                        self.ssh_client.exec_command(X86_ENABLE_TURBO_STRING)
+                    except Exception as e:
+                        logging.error(
+                            f"[{self.machine}] Failed to enable turbo mode: {e}",
+                            exc_info=True,
+                        )
             for jar in jars_to_kill:
                 try:
                     logging.info(f"[{self.machine}] Killing remote processes for {jar}")
@@ -283,6 +297,8 @@ class BenchmarkWorker(threading.Thread):
                         exc_info=True,
                     )
                 for fname in files:
+                    if fname.startswith(("launcher-", "harness-")):
+                        continue
                     remote_path = f"{self.remote_dir}/{fname}"
                     local_path = os.path.join(self.results_folder, fname)
                     logging.info(f"[{self.machine}] Downloading {fname}")
@@ -309,15 +325,19 @@ class BenchmarkWorker(threading.Thread):
                 pass
 
 
-def get_remote_nproc(host, user, key) -> int:
+def get_remote_info(host, user, key) -> str:
     try:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(hostname=host, username=user, key_filename=key, timeout=10)
-        _, stdout, _ = client.exec_command("nproc")
-        out = stdout.read().decode().strip()
+        _, nproc_stdout, _ = client.exec_command("nproc")
+        nproc = nproc_stdout.read().decode().strip()
+        _, jdk_version_stdout, _ = client.exec_command("java -version 2>&1")
+        jdk_version = jdk_version_stdout.read().decode().strip()
+        _, kernel_version_stdout, _ = client.exec_command("uname -r")
+        kernel_version = kernel_version_stdout.read().decode().strip()
         client.close()
-        return int(out)
+        return f'{nproc} cores \nJDK version: {jdk_version} \nKernel version: {kernel_version}'
     except Exception as e:
         logging.warning(f"Could not get nproc on {host}: {e}, defaulting to 1")
         return 1
@@ -329,70 +349,68 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
 
     # Get nproc for remote machines
-    cores_risc = get_remote_nproc(RISC_IP, RISC_USER, SSH_KEY_RISC)
-    cores_x86 = get_remote_nproc(X86_IP, X86_USER, SSH_KEY_X86)
+    remote_info_risc = get_remote_info(RISC_IP, RISC_USER, SSH_KEY_RISC)
+    remote_info_x86 = get_remote_info(X86_IP, X86_USER, SSH_KEY_X86)
 
     # Set up results folder
     date_str = time.strftime("%d-%m-%Y")
     time_str = time.strftime("%H-%M-%S")
 
-    for cpu_pct in CPU_UTILIZATION:
-        for bench in BENCHMARKS:
-            # Create results folder
-            logging.info(f"Running {bench} with CPU {cpu_pct}")
-            results_folder = f"{bench}_singleShot_CPU{cpu_pct}/{date_str}{time_str}"
-            os.makedirs(results_folder, exist_ok=True)
+    for bench, iterations in BENCHMARKS:
+        # Create results folder
+        logging.info(f"Running {bench}")
+        results_folder = f"gpl-{bench}_CPU100/{date_str}{time_str}"
+        os.makedirs(results_folder, exist_ok=True)
 
-            # Compute cpuQuota
-            cpu_quota_risc = cores_risc * cpu_pct
-            cpu_quota_x86 = cores_x86 * cpu_pct
-            # Create a file to store the bm params and quota
-            with open(os.path.join(results_folder, "bm_params.txt"), "w") as f:
-                f.write(f"{STATIC_BM_PARAMS} {bench}\n")
-                f.write(f"cpuQuota_risc: {cpu_quota_risc}\n")
-                f.write(f"cpuQuota_x86: {cpu_quota_x86}\n")
+        bm_params = f"{STATIC_BM_PARAMS} -r {iterations} {bench}"
 
-            # Run benchmarks
-            risc = BenchmarkWorker(
-                MACHINE.RISC,
-                RISC_IP,
-                RISC_USER,
-                SSH_KEY_RISC,
-                SHELLY_RISC_IP,
-                SHELLY_RISC_PW,
-                8081,
-                SHELLY_VERSION[MACHINE.RISC],
-                JVM_ARGS,
-                f"{STATIC_BM_PARAMS} {bench}",
-                results_folder,
-                "Benchmark",
-                cpu_quota_risc,
-            )
-            x86 = BenchmarkWorker(
-                MACHINE.X86,
-                X86_IP,
-                X86_USER,
-                SSH_KEY_X86,
-                SHELLY_X86_IP,
-                SHELLY_X86_PW,
-                8082,
-                SHELLY_VERSION[MACHINE.X86],
-                JVM_ARGS,
-                f"{STATIC_BM_PARAMS} {bench}",
-                results_folder,
-                "Benchmark",
-                cpu_quota_x86,
+        # Create a file to store the bm params and quota
+        with open(os.path.join(results_folder, "bm_params_sysinfo.txt"), "w") as f:
+            f.write(f"{JVM_ARGS} {bm_params}\n\n")
+            f.write(f"Remote RISC-V info: {remote_info_risc}\n\n")
+            f.write(f"Remote x86 info: {remote_info_x86}\n\n")
+
+        # Run benchmarks
+        x86 = BenchmarkWorker(
+            MACHINE.X86,
+            X86_IP,
+            X86_USER,
+            SSH_KEY_X86,
+            SHELLY_X86_IP,
+            SHELLY_X86_PW,
+            8080,
+            SHELLY_VERSION[MACHINE.X86],
+            JVM_ARGS,
+            bm_params,
+            results_folder,
+            "Benchmark",
+        )
+
+        risc = BenchmarkWorker(
+            MACHINE.RISC,
+            RISC_IP,
+            RISC_USER,
+            SSH_KEY_RISC,
+            SHELLY_RISC_IP,
+            SHELLY_RISC_PW,
+            8081,
+            SHELLY_VERSION[MACHINE.RISC],
+            JVM_ARGS,
+            bm_params,
+            results_folder,
+            "Benchmark",
             )
 
-            risc.start()
-            x86.start()
-            risc.join()
-            x86.join()
-            # Exit early if any worker encountered an error
-            if risc.exception or x86.exception:
-                sys.exit(1)
-            logging.info(f"Finished {bench} with CPU {cpu_pct}")
-            time.sleep(30)
+        x86.start()
+        risc.start()
+        x86.join()
+        risc.join()
+        # Exit early if any worker encountered an error
+        if risc.exception or x86.exception:
+            logging.error(f"Error in benchmark {bench}: {risc.exception or x86.exception}")
+            sys.exit(1)
+        logging.info(f"Finished {bench}")
+        time.sleep(30)
 
 
 if __name__ == "__main__":
