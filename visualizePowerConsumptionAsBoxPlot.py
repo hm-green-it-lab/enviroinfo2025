@@ -15,7 +15,7 @@ data_sources = [
         'power_file': work_dir + run_location_x86 + f'{slash}X86{slash}shellyReaderResults_x86',
         'rapl_file': None,  # no RAPL in this case
         'benchmark_file': work_dir + run_location_x86 + f'{slash}X86{slash}renaissanceOutput_x86.csv',
-        'processor': 'X86',
+        'processor': 'x86',
         'benchmark': 'Idle',
         'color': '0.2'
     },
@@ -23,7 +23,7 @@ data_sources = [
         'power_file': work_dir + run_location_x86_with_measurements + f'{slash}X86{slash}shellyReaderResults_x86',
         'rapl_file': work_dir + run_location_x86_with_measurements + f'{slash}X86{slash}raplResults_x86',
         'benchmark_file': work_dir + run_location_x86_with_measurements + f'{slash}X86{slash}renaissanceOutput_x86.csv',
-        'processor': 'X86',
+        'processor': 'x86',
         'benchmark': 'ProcFS and RAPL \nMeasurements',
         'color': '0.4'
     },
@@ -108,13 +108,13 @@ for df in all_power_data:
     print(f"{benchmark}: {mean_power:.4f} W")
 
 # Group data by processor
-x86_data = [data for data in all_power_data if (data['processor'] == 'X86').all()]
+x86_data = [data for data in all_power_data if (data['processor'] == 'x86').all()]
 riscv_data = [data for data in all_power_data if (data['processor'] == 'RISC-V').all()]
 
 plt.rcParams['font.size'] = '16'
 fig, axes = plt.subplots(1, 2, figsize=(16, 8), dpi=300)
 
-# X86 boxplot
+# x86 boxplot
 data_to_plot_x86 = [df['power'] for df in x86_data]
 labels_x86 = [df['benchmark'].iloc[0] for df in x86_data]
 colors_x86 = ['0.2', '0.4', '0.4']  # color for RAPL = same as corresponding measurement
@@ -128,7 +128,7 @@ for i, data in enumerate(data_to_plot_x86, start=1):
     mean = data.mean()
     axes[0].text(i, mean, 'x', horizontalalignment='center', color='red')
 axes[0].set_ylabel('Power Consumption (W)')
-axes[0].set_title('X86 Power Consumption')
+axes[0].set_title('x86 Power Consumption')
 axes[0].grid(True)
 
 # RISC-V boxplot
@@ -160,13 +160,13 @@ for df in x86_data:
 riscv_sums = [df['power'].sum() for df in riscv_data]
 
 # Add tables below boxplots
-# X86 table
+# x86 table
 cell_text_x86 = [[f"{val:.2f} Joule"] for val in x86_sums]
 row_labels_x86 = [df['benchmark'].iloc[0].replace('\n(RAPL)', ' (RAPL)').replace('\n(EM)', ' (EM)') for df in x86_data]
 table_x86 = axes[0].table(
     cellText=cell_text_x86,
     rowLabels=row_labels_x86,
-    colLabels=["X86 Energy Consumption"],
+    colLabels=["x86 Energy Consumption"],
     cellLoc='center',
     rowLoc='center',
     loc='bottom',
