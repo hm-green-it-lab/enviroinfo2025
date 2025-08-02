@@ -89,7 +89,7 @@ This repository also contains three python scripts that have been used to proces
 | `visualizeDurationAsBoxplots.py` | This Python script processes the result data for all benchmarks in a specific run configuration, calculates the steady-state, and visualizes the benchmark duration as boxplots. |
 | `visualizePowerConsumptionAsBoxPlot.py` | This Python script processes the result data of the baseline measurements and visualizes the power consumption as a boxplot and the energy consumption as a table. |
 
-## Measurement Tools 
+## Measurement Tools
 
 In addition to the python tools listed above, we have used the following Java-based tools for the experiments in this paper, which are also available online:
 
