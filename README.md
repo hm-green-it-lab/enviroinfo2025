@@ -94,7 +94,9 @@ https://github.com/hm-green-it-lab/shelly-power-reader| This Java-based shelly-p
 
 ## Experiment Automation
 
-In the folder `experiment_automation` you will find a script called `experiment_automation\benchmarkscript.py` that has been used to automate the benchmark execution. This script should be executed from a local device (e.g., laptop) and connects via SSH and SFTP to the x86 and RISC-V systems to execute the benchmarks and the necessary measurement tools (see [measurement-tools](#measurement-tools)).
+In the folder `experiment_automation` you will find a script called `experiment_automation\benchmarkscript.py` that has been used to automate the benchmark execution.
+The version of it named `baseline-measurement.py` was used to measure the system at idle state, once with the procfs and rapl [measurement-tools](#measurement-tools) running and once without.
+This script should be executed from a local device (e.g., laptop) and connects via SSH and SFTP to the x86 and RISC-V systems to execute the benchmarks and the necessary measurement tools (see [measurement-tools](#measurement-tools)).
 
 To start the script `Python` and the dependencies in `requirements.txt` are required. The Nix flake can be used to get a Shell with the required dependencies. To use a nix flake, nix package manager, or Nixos is required (https://nixos.org/download/). Then simply run `nix develop` in the `experiment_automation` directory to get a shell with all required dependencies (in some instances `--experimental-features nix-command --extra-perimental-features flakes` needs to be added to the nix develop command). Furthermore, please note that the `experiment_automation/flake.nix` contains a system property that needs to be adjusted in case 
 
